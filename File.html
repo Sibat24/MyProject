@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SharePlate - Food Waste Redistribution</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .map-pattern {
+            background-color: #e5e7eb;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const initialDonations = [
+            { id: 1, title: "Excess Banquet Food (Buffet)", donor: "Grand Hotel", type: "Perishable", quantity: "Feeds ~50", time: "Pickup by 11:30 PM", distance: "2.5 km", status: "Available", img: "https://placehold.co/400x250/10b981/ffffff?text=Banquet+Food" },
+            { id: 2, title: "Canned Goods & Rice", donor: "FreshMart Grocery", type: "Non-Perishable", quantity: "20 kg", time: "Flexible", distance: "4.1 km", status: "Available", img: "https://placehold.co/400x250/059669/ffffff?text=Canned+Goods" },
+            { id: 3, title: "Day-old Artisan Bread", donor: "Downtown Bakery", type: "Perishable", quantity: "30 Loaves", time: "Pickup by 6:00 PM", distance: "1.2 km", status: "Claimed", img: "https://placehold.co/400x250/047857/ffffff?text=Artisan+Bread" },
+            { id: 4, title: "Surplus Produce (Tomatoes)", donor: "Green Valley Farm", type: "Perishable", quantity: "15 kg", time: "Pickup by Tomorrow", distance: "8.0 km", status: "In Transit", img: "https://placehold.co/400x250/10b981/ffffff?text=Produce" },
+        ];
+
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Badge = ({ status }) => {
+            const styles = {
+                "Available": "bg-green-100 text-green-700",
+                "Claimed": "bg-yellow-100 text-yellow-700",
+                "In Transit": "bg-blue-100 text-blue-700",
+                "Delivered": "bg-gray-100 text-gray-700"
+            };
+            return (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
+                    {status}
+                </span>
+            );
+        };
+
+        const DashboardView = () => (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">Impact Overview</h2>
+                        <p className="text-gray-500 text-sm">Track your contribution to reducing food waste.</p>
+                    </div>
+                    <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                        <i className="fas fa-download"></i> CSR Report
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                <i className="fas fa-utensils text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Meals Rescued</p>
+                                <h3 className="text-2xl font-bold text-gray-800">2,450</h3>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <i className="fas fa-leaf text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">CO2 Emissions Saved</p>
+                                <h3 className="text-2xl font-bold text-gray-800">1,200 kg</h3>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                <i className="fas fa-users text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Active NGOs Reached</p>
+                                <h3 className="text-2xl font-bold text-gray-800">14</h3>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                <Card className="p-6 h-64 flex flex-col items-center justify-center border-dashed">
+                    <i className="fas fa-chart-line text-4xl text-gray-300 mb-3"></i>
+                    <p className="text-gray-500">Advanced Analytics Chart Placeholder</p>
+                    <p className="text-sm text-gray-400">(Visualize donations over time here)</p>
+                </Card>
+            </div>
+        );
+
+        const ListingsView = ({ role, donations, setDonations }) => {
+            const handleAction = (id, action) => {
+                setDonations(donations.map(d => {
+                    if (d.id === id) {
+                        if (action === 'claim') return { ...d, status: 'Claimed' };
+                        if (action === 'pickup') return { ...d, status: 'In Transit' };
+                    }
+                    return d;
+                }));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">Available Food Radar</h2>
+                            <p className="text-gray-500 text-sm">Real-time listings in your designated radius.</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                <i className="fas fa-filter mr-2"></i>Filter
+                            </button>
+                            <button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                <i className="fas fa-map mr-2"></i>Map View
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {donations.map(donation => (
+                            <Card key={donation.id} className="flex flex-col">
+                                <div className="h-40 bg-gray-200 relative">
+                                    <img src={donation.img} alt={donation.title} className="w-full h-full object-cover" />
+                                    <div className="absolute top-3 right-3">
+                                        <Badge status={donation.status} />
+                                    </div>
+                                </div>
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-gray-800 line-clamp-1">{donation.title}</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mb-4"><i className="fas fa-building mr-1"></i> {donation.donor}</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
+                                        <div className="flex items-center gap-2"><i className="fas fa-box text-emerald-600"></i> {donation.quantity}</div>
+                                        <div className="flex items-center gap-2"><i className="fas fa-clock text-orange-500"></i> {donation.time}</div>
+                                        <div className="flex items-center gap-2"><i className="fas fa-map-marker-alt text-red-500"></i> {donation.distance}</div>
+                                        <div className="flex items-center gap-2"><i className="fas fa-info-circle text-blue-500"></i> {donation.type}</div>
+                                    </div>
+
+                                    <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
+                                        {role === 'NGO' && donation.status === 'Available' && (
+                                            <button onClick={() => handleAction(donation.id, 'claim')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-sm font-medium transition">
+                                                Claim Donation
+                                            </button>
+                                        )}
+                                        {role === 'NGO' && donation.status === 'Claimed' && (
+                                            <button className="w-full bg-gray-100 text-gray-500 cursor-not-allowed py-2 rounded-lg text-sm font-medium">
+                                                Awaiting Volunteer
+                                            </button>
+                                        )}
+                                        {role === 'Volunteer' && donation.status === 'Claimed' && (
+                                            <button onClick={() => handleAction(donation.id, 'pickup')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">
+                                                Accept Delivery
+                                            </button>
+                                        )}
+                                        {role === 'Volunteer' && donation.status === 'In Transit' && (
+                                            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-sm font-medium transition">
+                                                <i className="fas fa-qrcode mr-2"></i> Scan QR to Deliver
+                                            </button>
+                                        )}
+                                        {role === 'Donor' && (
+                                            <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg text-sm font-medium transition">
+                                                View Details
+                                            </button>
+                                        )}
+                                        <button className="px-3 py-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
+                                            <i className="fas fa-comment-dots"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [role, setRole] = useState('NGO'); // 'Donor', 'NGO', 'Volunteer'
+            const [activeTab, setActiveTab] = useState('listings');
+            const [donations, setDonations] = useState(initialDonations);
+            const [showModal, setShowModal] = useState(false);
+
+            // Filter navigation items based on role
+            const navItems = [
+                { id: 'dashboard', label: 'Impact Dashboard', icon: 'fa-chart-pie', roles: ['Donor', 'NGO'] },
+                { id: 'listings', label: role === 'Volunteer' ? 'Available Deliveries' : 'Food Radar', icon: 'fa-satellite-dish', roles: ['Donor', 'NGO', 'Volunteer'] },
+                { id: 'logistics', label: 'My Deliveries', icon: 'fa-truck', roles: ['Volunteer'] },
+                { id: 'history', label: 'History', icon: 'fa-history', roles: ['Donor', 'NGO'] },
+            ].filter(item => item.roles.includes(role));
+
+            // Ensure valid tab when switching roles
+            useEffect(() => {
+                if (role === 'Volunteer' && activeTab === 'dashboard') {
+                    setActiveTab('listings');
+                }
+            }, [role]);
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row">
+                    {/* Sidebar */}
+                    <aside className="w-full md:w-64 bg-emerald-700 text-white flex flex-col">
+                        <div className="p-6 flex items-center gap-3">
+                            <div className="bg-white text-emerald-700 p-2 rounded-lg">
+                                <i className="fas fa-hands-holding-circle text-xl"></i>
+                            </div>
+                            <h1 className="text-xl font-bold tracking-tight">SharePlate</h1>
+                        </div>
+                        
+                        <nav className="flex-1 px-4 py-4 space-y-1">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
+                                        activeTab === item.id ? 'bg-emerald-800 text-white' : 'text-emerald-100 hover:bg-emerald-600 hover:text-white'
+                                    }`}
+                                >
+                                    <i className={`fas ${item.icon} w-5`}></i>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="p-4 mt-auto">
+                            <div className="bg-emerald-800 rounded-lg p-4 text-sm">
+                                <p className="text-emerald-200 mb-1">Current Profile</p>
+                                <p className="font-bold flex items-center gap-2">
+                                    <i className="fas fa-user-circle"></i> 
+                                    {role === 'Donor' ? 'Grand Hotel' : role === 'NGO' ? 'City Food Bank' : 'Alex (Driver)'}
+                                </p>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                        {/* Top Header */}
+                        <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+                            <div className="flex items-center gap-4">
+                                <button className="md:hidden text-gray-500 hover:text-gray-700">
+                                    <i className="fas fa-bars text-xl"></i>
+                                </button>
+                                <h2 className="text-xl font-bold text-gray-800 hidden sm:block">
+                                    {navItems.find(i => i.id === activeTab)?.label || 'Overview'}
+                                </h2>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                {/* Role Simulator Dropdown */}
+                                <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
+                                    <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">Simulate Role:</span>
+                                    <select 
+                                        value={role} 
+                                        onChange={(e) => setRole(e.target.value)}
+                                        className="bg-transparent text-sm font-medium text-purple-900 focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="Donor">Donor (Restaurant)</option>
+                                        <option value="NGO">Receiver (NGO)</option>
+                                        <option value="Volunteer">Volunteer (Driver)</option>
+                                    </select>
+                                </div>
+
+                                <button className="relative p-2 text-gray-400 hover:text-gray-600 transition">
+                                    <i className="fas fa-bell text-xl"></i>
+                                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                </button>
+
+                                {role === 'Donor' && (
+                                    <button onClick={() => setShowModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                                        <i className="fas fa-plus"></i> Post Food
+                                    </button>
+                                )}
+                            </div>
+                        </header>
+
+                        {/* Scrollable Content Area */}
+                        <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50 hide-scrollbar">
+                            <div className="max-w-6xl mx-auto">
+                                {activeTab === 'dashboard' && <DashboardView />}
+                                {(activeTab === 'listings' || activeTab === 'logistics') && (
+                                    <ListingsView role={role} donations={donations} setDonations={setDonations} />
+                                )}
+                                {activeTab === 'history' && (
+                                    <div className="text-center py-20">
+                                        <i className="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                                        <h3 className="text-xl font-bold text-gray-500">History Log</h3>
+                                        <p className="text-gray-400">Past transactions will appear here.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* Add Donation Modal Overlay (Simulated) */}
+                    {showModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                    <h3 className="text-lg font-bold text-gray-800">Post New Donation</h3>
+                                    <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                                        <i className="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Food Description</label>
+                                        <input type="text" placeholder="e.g. 2 Trays of Lasagna" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                            <select className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                                <option>Perishable</option>
+                                                <option>Non-Perishable</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Pickup By</label>
+                                            <input type="time" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                                        </div>
+                                    </div>
+                                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                                        <i className="fas fa-camera text-2xl text-gray-400 mb-2"></i>
+                                        <p className="text-sm text-gray-500 font-medium">Click to upload photo</p>
+                                    </div>
+                                    <button onClick={() => setShowModal(false)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-bold transition mt-2">
+                                        Submit Listing
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
